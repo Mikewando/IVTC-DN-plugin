@@ -56,7 +56,7 @@ Broadly the project file is just a zlib compressed json file. The structure of t
     },
     "extra_attributes": { // A map of output_frame => user-generated string, intended to be used for whatever additional processing scripts may want to do by processing the project outside of the plugin
         1234: "Foo"
-    }
+    },
     "project_garbage": { // Ignored by the plugin, and used only by GUI
         "version": 1,
         "active_cycle": 0,
