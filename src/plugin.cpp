@@ -121,6 +121,21 @@ static void VS_CC ivtcFree(void *instanceData, VSCore *core, const VSAPI *vsapi)
     delete d;
 }
 
+static std::string lookupNoMatchHandling(const json& projectData, uint_fast32_t activeFrame) {
+    std::string activeFrameJsonKey = std::to_string(activeFrame);
+    if (!projectData.contains("no_match_handling_default") || projectData["no_match_handling_default"] == "Previous") {
+        if (projectData["no_match_handling"].contains(activeFrameJsonKey) && projectData["no_match_handling"][activeFrameJsonKey] == "Next") {
+            return "Next";
+        }
+        return "Previous";
+    } else {
+        if (projectData["no_match_handling"].contains(activeFrameJsonKey) && projectData["no_match_handling"][activeFrameJsonKey] == "Previous") {
+            return "Previous";
+        }
+        return "Next";
+    }
+}
+
 static int_fast8_t TOP_FRAMES[] = {0, 2, 4, 6};
 static int_fast8_t BOTTOM_FRAMES[] = {1, 3, 5, 7};
 static int_fast8_t COMPLETE_PREVIOUS_CYCLE = 9;
@@ -165,12 +180,12 @@ static void VS_CC ivtcCreate(const VSMap *in, VSMap *out, void *userData, VSCore
 
     std::pair<uint_fast32_t, uint_fast32_t> lastSpecifiedFrame = EMPTY_PAIR;
     uint_fast32_t pushCount = 1;
-    for (auto cycleIdx = 0; cycleIdx < totalCycles; cycleIdx++) {
+    for (size_t cycleIdx = 0; cycleIdx < totalCycles; cycleIdx++) {
         uint_fast8_t actionCountInCycle = cycleIdx == completeCycles ? fieldsWithIncompleteCycles : 10;
         auto actionsIdx = cycleIdx * 10;
         std::span<std::int_fast8_t> cycleActions(actions.begin() + actionsIdx, actionCountInCycle);
         uint_fast8_t frameCountInCycle = actionCountInCycle * 2 / 5;
-        for (auto frameIdx = 0; frameIdx < frameCountInCycle; frameIdx++) {
+        for (uint_fast8_t frameIdx = 0; frameIdx < frameCountInCycle; frameIdx++) {
             uint_fast32_t activeFrame = cycleIdx * 4 + frameIdx;
             int_fast8_t top;
             int_fast8_t bottom;
@@ -180,10 +195,9 @@ static void VS_CC ivtcCreate(const VSMap *in, VSMap *out, void *userData, VSCore
             bottom = it == cycleActions.end() ? -1 : it - cycleActions.begin();
 
             if (top == -1 && bottom == -1) {
-                std::string activeFrameJsonKey = std::to_string(activeFrame);
                 if (frameIdx == 3 && (actionsIdx + 10) < actions.size() && actions[actionsIdx + 10] == COMPLETE_PREVIOUS_CYCLE) {
                     lastSpecifiedFrame = std::make_pair(actionsIdx + 10, UINT_FAST32_MAX);
-                } else if (projectData["no_match_handling"].contains(activeFrameJsonKey) && projectData["no_match_handling"][activeFrameJsonKey] == "Next") {
+                } else if (lookupNoMatchHandling(projectData, activeFrame) == "Next") {
                     d->freezeFrameHandling[activeFrame] = "Next";
                     lastSpecifiedFrame = EMPTY_PAIR;
                 } else {
@@ -206,7 +220,7 @@ static void VS_CC ivtcCreate(const VSMap *in, VSMap *out, void *userData, VSCore
             if (lastSpecifiedFrame == EMPTY_PAIR) {
                 pushCount++;
             } else {
-                for (auto i = 0; i < pushCount; i++) {
+                for (uint_fast32_t i = 0; i < pushCount; i++) {
                     d->fieldsForFrames.push_back(lastSpecifiedFrame);
                 }
                 pushCount = 1;
