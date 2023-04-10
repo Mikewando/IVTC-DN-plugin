@@ -14,10 +14,14 @@ sources = [
   'src/miniz.c'
 ]
 
+if meson.get_compiler('cpp').get_id() == 'gcc'
+  add_project_arguments('-Wno-unused-parameter', language: 'cpp')
+endif
+
 shared_module('ivtcdn', sources,
   include_directories: 'src',
   dependencies: deps,
   install: true,
-  install_dir: join_paths(vapoursynth_dep.get_pkgconfig_variable('libdir'), 'vapoursynth'),
+  install_dir: join_paths(vapoursynth_dep.get_variable(pkgconfig: 'libdir'), 'vapoursynth'),
   gnu_symbol_visibility: 'hidden'
 )

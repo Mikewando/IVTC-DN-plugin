@@ -51,9 +51,10 @@ Broadly the project file is just a zlib compressed json file. The structure of t
 ```js
 {
     "ivtc_actions": [0, ...], // An array of integers with one entry for every input field (see later definition)
-    "no_match_handling": { // A map of output_frame => action for output frames which should use non-default action if no input fields are matched (default is "[Use ]Previous[ Frame]")
+    "no_match_handling": { // A map of output_frame => action for output frames which should use non-default action if no input fields are matched
         1234: "Next"
     },
+    "no_match_handling_default": "Previous", // What to do if no match or specific handling was specified (default is "[Use ]Previous[ Frame]")
     "extra_attributes": { // A map of output_frame => user-generated string, intended to be used for whatever additional processing scripts may want to do by processing the project outside of the plugin
         1234: "Foo"
     },
