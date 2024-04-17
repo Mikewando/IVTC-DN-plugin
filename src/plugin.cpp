@@ -23,8 +23,9 @@ struct IvtcData {
     std::vector<std::pair<uint_fast32_t, uint_fast32_t>> fieldsForFrames;
     std::map<uint_fast32_t, std::string> freezeFrameHandling;
     VSNode* linedoubledNode;
+    bool tff;
 
-    IvtcData() : videoNode(nullptr), fieldsForFrames(), linedoubledNode(nullptr) {}
+    IvtcData() : videoNode(nullptr), fieldsForFrames(), linedoubledNode(nullptr), tff(true) {}
 };
 
 static std::pair<uint_fast32_t, uint_fast32_t> EMPTY_PAIR = std::make_pair(UINT_FAST32_MAX, UINT_FAST32_MAX);
@@ -53,8 +54,14 @@ static const VSFrame *VS_CC ivtcGetFrame(int n, int activationReason, void *inst
             vsapi->requestFrameFilter(requiredFields.second, videoNode, frameCtx);
         }
     } else if (activationReason == arAllFramesReady) {
-        auto top = requiredFields.first;
-        auto bottom = requiredFields.second;
+        uint_fast32_t top, bottom;
+        if (d->tff) {
+            top = requiredFields.first;
+            bottom = requiredFields.second;
+        } else {
+            bottom = requiredFields.first;
+            top = requiredFields.second;
+        }
 
         VSFrame* dst;
         VSMap* props;
@@ -169,6 +176,8 @@ static void VS_CC ivtcCreate(const VSMap *in, VSMap *out, void *userData, VSCore
     }
 
     json projectData = json::parse(decompressed);
+
+    d->tff = projectData.value("tff", true);
 
     std::vector<std::int_fast8_t> actions = projectData["ivtc_actions"];
 
